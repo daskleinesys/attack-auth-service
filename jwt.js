@@ -1,14 +1,22 @@
 const fs = require('fs');
 const jwt = require('jsonwebtoken');
+const mysql = require('mysql2');
+
+// create the connection to database
+const db = mysql.createConnection({
+    host: 'localhost',
+    user: 'attack',
+    password: 'attack',
+    database: 'attack',
+});
 
 // PAYLOAD
 const payload = {};
 
 // PRIVATE and PUBLIC key
 const privateKEY = fs.readFileSync('./private.key', 'utf8');
-const publicKEY = fs.readFileSync('./public.key', 'utf8');
 const issuer = 'Attack Auth Service';
-const subject = 'daskleinesys';
+const subject = '';
 const audience = 'http://localhost:8080';
 
 // SIGNING OPTIONS
@@ -20,13 +28,28 @@ const signOptions = {
     algorithm: 'RS256',
 };
 
-const token = jwt.sign(payload, privateKEY, signOptions);
-
 const verifyOptions = {
     algorithm: ['RS256'],
 };
-const legit = jwt.verify(token, publicKEY, verifyOptions);
 
-module.exports = function () {
-    return token;
+function signUser(subject) {
+    return jwt.sign(payload, privateKEY, {
+        ...signOptions,
+        subject,
+    });
+}
+
+module.exports = function (user, password) {
+    return new Promise((resolve, reject) => {
+        db.query(
+            `SELECT login FROM user WHERE login = '${user}' AND password = SHA('${password}')`,
+            function (err, results) {
+                if (Array.isArray(results) && results.length === 1) {
+                    resolve(signUser(results[0].login));
+                } else {
+                    reject();
+                }
+            }
+        );
+    });
 };
