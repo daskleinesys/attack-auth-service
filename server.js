@@ -18,7 +18,7 @@ app.post('/login', async (req, res) => {
         const token = await jwt(req.body.username, req.body.password);
         res.send(token);
     } catch (e) {
-        res.send(401);
+        res.sendStatus(401);
     }
 });
 
