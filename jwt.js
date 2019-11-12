@@ -2,14 +2,6 @@ const fs = require('fs');
 const jwt = require('jsonwebtoken');
 const mysql = require('mysql2');
 
-// create the connection to database
-const db = mysql.createConnection({
-    host: 'localhost',
-    user: 'attack',
-    password: 'attack',
-    database: 'attack',
-});
-
 // PAYLOAD
 const payload = {};
 
@@ -41,6 +33,14 @@ function signUser(subject) {
 
 module.exports = function (user, password) {
     return new Promise((resolve, reject) => {
+        // create the connection to database
+        const db = mysql.createConnection({
+            host: 'attack-database',
+            user: 'attack',
+            password: 'attack',
+            database: 'attack',
+        });
+
         db.query(
             `SELECT login FROM user WHERE login = '${user}' AND password = SHA('${password}')`,
             function (err, results) {
@@ -49,6 +49,7 @@ module.exports = function (user, password) {
                 } else {
                     reject();
                 }
+                db.close();
             }
         );
     });
