@@ -2,9 +2,6 @@ const fs = require('fs');
 const jwt = require('jsonwebtoken');
 const mysql = require('mysql2');
 
-// PAYLOAD
-const payload = {};
-
 // PRIVATE and PUBLIC key
 const privateKEY = fs.readFileSync('./private.key', 'utf8');
 const issuer = 'Attack Auth Service';
@@ -24,8 +21,10 @@ const verifyOptions = {
     algorithm: ['RS256'],
 };
 
-function signUser(subject) {
-    return jwt.sign(payload, privateKEY, {
+function signUser(subject, status) {
+    return jwt.sign({
+        status,
+    }, privateKEY, {
         ...signOptions,
         subject,
     });
@@ -42,10 +41,10 @@ module.exports = function (user, password) {
         });
 
         db.query(
-            `SELECT login FROM user WHERE login = '${user}' AND password = SHA('${password}')`,
+            `SELECT login, status FROM user WHERE login = '${user}' AND password = SHA('${password}')`,
             function (err, results) {
                 if (Array.isArray(results) && results.length === 1) {
-                    resolve(signUser(results[0].login));
+                    resolve(signUser(results[0].login, results[0].status));
                 } else {
                     reject();
                 }
